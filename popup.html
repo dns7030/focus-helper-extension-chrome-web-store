@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Focus Helper</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎯 Focus Helper</h1>
+      <p class="subtitle">Block distracting feeds</p>
+    </div>
+    
+    <div class="controls">
+      <div class="control-item">
+        <div class="control-info">
+          <div class="control-icon">💼</div>
+          <div class="control-text">
+            <h3>LinkedIn Feed</h3>
+            <p>Block the main feed on LinkedIn</p>
+          </div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="linkedinToggle" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+      
+      <div class="control-item">
+        <div class="control-info">
+          <div class="control-icon">🐦</div>
+          <div class="control-text">
+            <h3>Twitter/X "For You"</h3>
+            <p>Block the "For You" timeline</p>
+          </div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="twitterToggle" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <p class="status" id="status">Settings saved</p>
+    </div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>

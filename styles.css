@@ -1,0 +1,4 @@
+/* Global styles injected into pages */
+.focus-helper-blocked {
+  display: none !important;
+}
