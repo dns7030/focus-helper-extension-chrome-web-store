@@ -14,7 +14,26 @@ chrome.runtime.onInstalled.addListener(() => {
 // Listen for storage changes and update blocking rules
 chrome.storage.onChanged.addListener((changes, namespace) => {
   if (changes[BLOCKED_DOMAINS_KEY]) {
-    updateBlockingRules(changes[BLOCKED_DOMAINS_KEY].newValue || []);
+    chrome.storage.sync.get(['masterEnabled'], (result) => {
+      const masterEnabled = result.masterEnabled !== false;
+      if (masterEnabled) {
+        updateBlockingRules(changes[BLOCKED_DOMAINS_KEY].newValue || []);
+      }
+    });
+  }
+  
+  // When master toggle changes, update rules accordingly
+  if (changes.masterEnabled) {
+    chrome.storage.sync.get([BLOCKED_DOMAINS_KEY], (result) => {
+      const domains = result[BLOCKED_DOMAINS_KEY] || [];
+      if (changes.masterEnabled.newValue) {
+        // Re-enable blocking
+        updateBlockingRules(domains);
+      } else {
+        // Disable blocking by removing all rules
+        updateBlockingRules([]);
+      }
+    });
   }
 });
 
@@ -73,9 +92,16 @@ async function updateBlockingRules(blockedDomains) {
 }
 
 // Initialize rules on startup
-chrome.storage.sync.get([BLOCKED_DOMAINS_KEY], (result) => {
+chrome.storage.sync.get(['masterEnabled', BLOCKED_DOMAINS_KEY], (result) => {
+  const masterEnabled = result.masterEnabled !== false;
   const domains = result[BLOCKED_DOMAINS_KEY] || [];
-  updateBlockingRules(domains);
+  
+  // Only apply rules if master toggle is enabled
+  if (masterEnabled) {
+    updateBlockingRules(domains);
+  } else {
+    updateBlockingRules([]);
+  }
 });
 
 // Handle messages from popup

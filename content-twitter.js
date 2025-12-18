@@ -42,6 +42,7 @@
       if (isEnabled) {
         hideForYouTab();
         switchToFollowingTab();
+        hideSidebars();
       }
     });
 
@@ -62,6 +63,7 @@
     // Initial execution
     hideForYouTab();
     switchToFollowingTab();
+    hideSidebars();
   }
 
   function hideForYouTab() {
@@ -122,6 +124,45 @@
     }
   }
 
+  function hideSidebars() {
+    // Check if blocking is enabled
+    if (!isEnabled || !masterEnabled) {
+      return;
+    }
+
+    // Hide "What's happening" and "Who to follow" sections specifically
+    // More targeted approach to preserve search field
+    const sidebarSelectors = [
+      '[data-testid="trend"]',
+      '[data-testid="cellInnerDiv"] [aria-label*="Timeline: Trending"]',
+      'aside[aria-label*="Who to follow"]',
+      'section[aria-labelledby*="accessible-list"] div[data-testid="UserCell"]',
+    ];
+
+    sidebarSelectors.forEach(selector => {
+      const elements = document.querySelectorAll(selector);
+      elements.forEach(el => {
+        if (!el.classList.contains('focus-helper-sidebar-blocked')) {
+          el.classList.add('focus-helper-sidebar-blocked');
+        }
+      });
+    });
+
+    // Hide trending module by finding parent containers with specific text
+    const sections = document.querySelectorAll('section');
+    sections.forEach(section => {
+      const heading = section.querySelector('h2');
+      if (heading) {
+        const text = heading.textContent.toLowerCase();
+        if (text.includes("what's happening") || text.includes('trending') || text.includes('who to follow')) {
+          if (!section.classList.contains('focus-helper-sidebar-blocked')) {
+            section.classList.add('focus-helper-sidebar-blocked');
+          }
+        }
+      }
+    });
+  }
+
   function addBlockingStyles() {
     if (document.querySelector('#focus-helper-twitter-styles')) return;
 
@@ -129,6 +170,10 @@
     style.id = 'focus-helper-twitter-styles';
     style.textContent = `
       .focus-helper-blocked {
+        display: none !important;
+      }
+      
+      .focus-helper-sidebar-blocked {
         display: none !important;
       }
       
@@ -191,6 +236,11 @@
     // Remove blocked class
     document.querySelectorAll('.focus-helper-blocked').forEach(el => {
       el.classList.remove('focus-helper-blocked');
+    });
+
+    // Remove sidebar blocked class
+    document.querySelectorAll('.focus-helper-sidebar-blocked').forEach(el => {
+      el.classList.remove('focus-helper-sidebar-blocked');
     });
 
     // Remove message
