@@ -3,20 +3,30 @@
   'use strict';
 
   let isEnabled = true;
+  let masterEnabled = true;
 
   // Load settings from storage
-  chrome.storage.sync.get(['twitterEnabled'], function(result) {
+  chrome.storage.sync.get(['masterEnabled', 'twitterEnabled'], function(result) {
+    masterEnabled = result.masterEnabled !== false;
     isEnabled = result.twitterEnabled !== false;
-    if (isEnabled) {
+    if (isEnabled && masterEnabled) {
       blockForYouTab();
     }
   });
 
   // Listen for settings changes
   chrome.storage.onChanged.addListener(function(changes, namespace) {
+    if (changes.masterEnabled) {
+      masterEnabled = changes.masterEnabled.newValue;
+      if (masterEnabled && isEnabled) {
+        blockForYouTab();
+      } else {
+        unblockForYouTab();
+      }
+    }
     if (changes.twitterEnabled) {
       isEnabled = changes.twitterEnabled.newValue;
-      if (isEnabled) {
+      if (isEnabled && masterEnabled) {
         blockForYouTab();
       } else {
         unblockForYouTab();
@@ -55,6 +65,11 @@
   }
 
   function hideForYouTab() {
+    // Check if blocking is enabled
+    if (!isEnabled || !masterEnabled) {
+      return;
+    }
+    
     // Hide "For You" tab button
     const tabs = document.querySelectorAll('[role="tab"]');
     tabs.forEach(tab => {
@@ -68,6 +83,11 @@
   }
 
   function switchToFollowingTab() {
+    // Check if blocking is enabled
+    if (!isEnabled || !masterEnabled) {
+      return;
+    }
+    
     // Only act on /home page
     const currentPath = window.location.pathname;
     if (currentPath !== '/home' && currentPath !== '/') {

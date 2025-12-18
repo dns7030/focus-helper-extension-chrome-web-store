@@ -1,17 +1,23 @@
 {
   "manifest_version": 3,
   "name": "Focus Helper",
-  "version": "1.0.0",
-  "description": "Block distracting feeds on LinkedIn and Twitter to help you stay focused",
+  "version": "1.1.0",
+  "description": "Block distracting feeds on LinkedIn and Twitter, plus block entire domains to help you stay focused",
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "declarativeNetRequest",
+    "tabs"
   ],
   "host_permissions": [
     "*://*.linkedin.com/*",
     "*://*.twitter.com/*",
-    "*://*.x.com/*"
+    "*://*.x.com/*",
+    "<all_urls>"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": ["*://*.linkedin.com/*"],
@@ -40,5 +46,11 @@
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["blocked.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }

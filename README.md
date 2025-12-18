@@ -1,13 +1,15 @@
 # 🎯 Focus Helper - Chrome Extension
 
-A Chrome extension that helps you stay focused by blocking distracting feeds on LinkedIn and Twitter/X.
+A Chrome extension that helps you stay focused by blocking distracting feeds on LinkedIn and Twitter/X, plus the ability to block entire domains.
 
 ## Features
 
 - **Block LinkedIn Feed**: Hides the main feed on LinkedIn to prevent endless scrolling
-- **Block Twitter "For You" Tab**: Automatically redirects to "Following" and blocks the algorithmic "For You" timeline
+- **Block Twitter "For You" Tab**: Automatically switches to "Following" tab and hides the algorithmic "For You" timeline
+- **Block Entire Domains**: Add any website domain to completely block access
 - **Easy Toggle Controls**: Enable/disable blocking for each platform independently
 - **Beautiful UI**: Clean, modern interface with gradient design
+- **Custom Block Page**: Blocked domains show a focus message with option to unblock
 
 ## Installation
 
@@ -35,6 +37,7 @@ A Chrome extension that helps you stay focused by blocking distracting feeds on 
 Click the extension icon to open the control panel where you can:
 - Toggle LinkedIn feed blocking on/off
 - Toggle Twitter "For You" blocking on/off
+- Add/remove blocked domains
 
 ### What Gets Blocked
 
@@ -44,8 +47,14 @@ Click the extension icon to open the control panel where you can:
 
 **Twitter/X:**
 - "For You" tab is hidden
-- Automatically redirects to "Following" tab
+- Automatically switches to "Following" tab on `/home`
 - Shows a focus message if you try to access "For You"
+
+**Domain Blocking:**
+- Enter any domain (e.g., `reddit.com`, `youtube.com`, `facebook.com`)
+- The entire website will be blocked
+- Blocked sites show a custom page with option to unblock
+- Domains are saved across browser sessions
 
 ## Creating Icons
 
@@ -69,11 +78,14 @@ Alternatively, you can create your own icons with any image editor. The icons sh
 ```
 focusBrowserExtension/
 ├── manifest.json           # Extension configuration
+├── background.js          # Background service worker for domain blocking
 ├── popup.html             # Extension popup UI
 ├── popup.css              # Popup styling
 ├── popup.js               # Popup functionality
 ├── content-linkedin.js    # LinkedIn blocking script
 ├── content-twitter.js     # Twitter blocking script
+├── blocked.html           # Blocked domain page
+├── blocked.js             # Blocked page functionality
 ├── styles.css             # Global injected styles
 ├── icons/                 # Extension icons
 │   ├── icon16.png
@@ -93,9 +105,11 @@ The extension uses:
 
 ## Permissions
 
-- `storage`: Save your blocking preferences
+- `storage`: Save your blocking preferences and domain list
 - `activeTab`: Interact with the current tab
-- `host_permissions`: Access LinkedIn and Twitter/X domains
+- `tabs`: Reload tabs when settings change
+- `declarativeNetRequest`: Block domains at the network level
+- `host_permissions`: Access LinkedIn, Twitter/X, and all domains for blocking
 
 ## Troubleshooting
 

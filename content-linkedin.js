@@ -3,20 +3,30 @@
   'use strict';
 
   let isEnabled = true;
+  let masterEnabled = true;
 
   // Load settings from storage
-  chrome.storage.sync.get(['linkedinEnabled'], function(result) {
+  chrome.storage.sync.get(['masterEnabled', 'linkedinEnabled'], function(result) {
+    masterEnabled = result.masterEnabled !== false;
     isEnabled = result.linkedinEnabled !== false;
-    if (isEnabled) {
+    if (isEnabled && masterEnabled) {
       blockFeed();
     }
   });
 
   // Listen for settings changes
   chrome.storage.onChanged.addListener(function(changes, namespace) {
+    if (changes.masterEnabled) {
+      masterEnabled = changes.masterEnabled.newValue;
+      if (masterEnabled && isEnabled) {
+        blockFeed();
+      } else {
+        unblockFeed();
+      }
+    }
     if (changes.linkedinEnabled) {
       isEnabled = changes.linkedinEnabled.newValue;
-      if (isEnabled) {
+      if (isEnabled && masterEnabled) {
         blockFeed();
       } else {
         unblockFeed();
@@ -51,11 +61,37 @@
       });
     }
 
+    // Listen for URL changes (LinkedIn is a SPA)
+    let lastUrl = location.href;
+    new MutationObserver(() => {
+      const currentUrl = location.href;
+      if (currentUrl !== lastUrl) {
+        lastUrl = currentUrl;
+        // URL changed, re-check and apply blocking
+        setTimeout(() => {
+          hideFeedElements();
+        }, 100);
+      }
+    }).observe(document, { subtree: true, childList: true });
+
     // Initial hide
     hideFeedElements();
   }
 
   function hideFeedElements() {
+    // Check if blocking is enabled
+    if (!isEnabled || !masterEnabled) {
+      return;
+    }
+    
+    // Only block on feed pages
+    const currentPath = window.location.pathname;
+    const isFeedPage = currentPath === '/feed/' || currentPath === '/feed' || currentPath === '/';
+    
+    if (!isFeedPage) {
+      return; // Don't block on other pages like connections, messaging, etc.
+    }
+
     // Hide main feed container
     const feedSelectors = [
       'main.scaffold-layout__main',
