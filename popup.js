@@ -2,16 +2,18 @@ document.addEventListener('DOMContentLoaded', function() {
   const masterToggle = document.getElementById('masterToggle');
   const linkedinToggle = document.getElementById('linkedinToggle');
   const twitterToggle = document.getElementById('twitterToggle');
+  const youtubeToggle = document.getElementById('youtubeToggle');
   const status = document.getElementById('status');
   const domainInput = document.getElementById('domainInput');
   const addDomainBtn = document.getElementById('addDomain');
   const blockedList = document.getElementById('blockedList');
 
   // Load saved settings
-  chrome.storage.sync.get(['masterEnabled', 'linkedinEnabled', 'twitterEnabled'], function(result) {
+  chrome.storage.sync.get(['masterEnabled', 'linkedinEnabled', 'twitterEnabled', 'youtubeEnabled'], function(result) {
     masterToggle.checked = result.masterEnabled !== false;
     linkedinToggle.checked = result.linkedinEnabled !== false;
     twitterToggle.checked = result.twitterEnabled !== false;
+    youtubeToggle.checked = result.youtubeEnabled !== false;
   });
 
   // Load blocked domains
@@ -23,8 +25,8 @@ document.addEventListener('DOMContentLoaded', function() {
     chrome.storage.sync.set({ masterEnabled: enabled }, function() {
       showStatus(enabled ? 'All blocking enabled' : 'All blocking disabled');
       
-      // Reload all LinkedIn and Twitter tabs
-      chrome.tabs.query({ url: ['*://*.linkedin.com/*', '*://*.twitter.com/*', '*://*.x.com/*'] }, function(tabs) {
+      // Reload all LinkedIn, Twitter, and YouTube tabs
+      chrome.tabs.query({ url: ['*://*.linkedin.com/*', '*://*.twitter.com/*', '*://*.x.com/*', '*://*.youtube.com/*'] }, function(tabs) {
         tabs.forEach(tab => {
           chrome.tabs.reload(tab.id);
         });
@@ -55,6 +57,21 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Reload Twitter/X tabs
       chrome.tabs.query({ url: ['*://*.twitter.com/*', '*://*.x.com/*'] }, function(tabs) {
+        tabs.forEach(tab => {
+          chrome.tabs.reload(tab.id);
+        });
+      });
+    });
+  });
+
+  // Save YouTube setting
+  youtubeToggle.addEventListener('change', function() {
+    const enabled = youtubeToggle.checked;
+    chrome.storage.sync.set({ youtubeEnabled: enabled }, function() {
+      showStatus('Settings saved');
+      
+      // Reload YouTube tabs
+      chrome.tabs.query({ url: '*://*.youtube.com/*' }, function(tabs) {
         tabs.forEach(tab => {
           chrome.tabs.reload(tab.id);
         });

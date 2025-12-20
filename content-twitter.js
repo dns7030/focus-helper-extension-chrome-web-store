@@ -130,6 +130,20 @@
       return;
     }
 
+    // Don't hide sidebars on profile pages, status pages, or other content pages
+    const currentPath = window.location.pathname;
+    // Matches /username, /username/with_replies, /username/media, /username/likes, etc.
+    const isProfilePage = currentPath.match(/^\/[^\/]+(?:\/(with_replies|media|likes|followers|following|highlights))?$/);
+    const isStatusPage = currentPath.includes('/status/');
+    const isContentPage = currentPath.includes('/search') || 
+                          currentPath.includes('/notifications') || 
+                          currentPath.includes('/messages') ||
+                          currentPath.includes('/explore');
+    
+    if (isProfilePage || isStatusPage || isContentPage) {
+      return; // Don't block sidebars on these pages
+    }
+
     // Hide "What's happening" and "Who to follow" sections specifically
     // More targeted approach to preserve search field
     const sidebarSelectors = [

@@ -1,11 +1,12 @@
 # 🎯 Focus Helper - Chrome Extension
 
-A Chrome extension that helps you stay focused by blocking distracting feeds on LinkedIn and Twitter/X, plus the ability to block entire domains.
+A Chrome extension that helps you stay focused by blocking distracting feeds on LinkedIn, Twitter/X, and YouTube, plus the ability to block entire domains.
 
 ## Features
 
 - **Block LinkedIn Feed**: Hides the main feed on LinkedIn to prevent endless scrolling
-- **Block Twitter "For You" Tab**: Automatically switches to "Following" tab and hides the algorithmic "For You" timeline
+- **Block Twitter "For You" Tab**: Automatically switches to "Following" tab and hides the algorithmic "For You" timeline (profile pages remain accessible)
+- **Block YouTube Recommendations**: Hides homepage feed, sidebar recommendations, end screens, and comments to keep you focused
 - **Block Entire Domains**: Add any website domain to completely block access
 - **Easy Toggle Controls**: Enable/disable blocking for each platform independently
 - **Beautiful UI**: Clean, modern interface with gradient design
@@ -37,6 +38,7 @@ A Chrome extension that helps you stay focused by blocking distracting feeds on 
 Click the extension icon to open the control panel where you can:
 - Toggle LinkedIn feed blocking on/off
 - Toggle Twitter "For You" blocking on/off
+- Toggle YouTube recommendations blocking on/off
 - Add/remove blocked domains
 
 ### What Gets Blocked
@@ -48,10 +50,18 @@ Click the extension icon to open the control panel where you can:
 **Twitter/X:**
 - "For You" tab is hidden
 - Automatically switches to "Following" tab on `/home`
-- Shows a focus message if you try to access "For You"
+- Profile pages, status pages, and other content remain fully accessible
+- Sidebar recommendations ("What's happening", "Who to follow") are hidden on home page only
+
+**YouTube:**
+- Homepage feed/recommendations are completely hidden
+- Sidebar recommendations on watch pages are blocked
+- End screen video suggestions are hidden
+- Comments section is hidden
+- Search functionality remains available for finding specific videos
 
 **Domain Blocking:**
-- Enter any domain (e.g., `reddit.com`, `youtube.com`, `facebook.com`)
+- Enter any domain (e.g., `reddit.com`, `facebook.com`, `instagram.com`)
 - The entire website will be blocked
 - Blocked sites show a custom page with option to unblock
 - Domains are saved across browser sessions
@@ -84,6 +94,7 @@ focusBrowserExtension/
 ├── popup.js               # Popup functionality
 ├── content-linkedin.js    # LinkedIn blocking script
 ├── content-twitter.js     # Twitter blocking script
+├── content-youtube.js     # YouTube blocking script
 ├── blocked.html           # Blocked domain page
 ├── blocked.js             # Blocked page functionality
 ├── styles.css             # Global injected styles
@@ -98,10 +109,11 @@ focusBrowserExtension/
 ## How It Works
 
 The extension uses:
-- **Content Scripts**: Injected into LinkedIn and Twitter pages to hide feed elements
+- **Content Scripts**: Injected into LinkedIn, Twitter, and YouTube pages to hide feed elements
 - **MutationObserver**: Watches for dynamic content loading to continuously block feeds
 - **Chrome Storage API**: Saves your preferences across browser sessions
 - **CSS Injection**: Hides unwanted elements and displays focus messages
+- **SPA Detection**: Handles URL changes in single-page applications like Twitter and YouTube
 
 ## Permissions
 
@@ -109,7 +121,7 @@ The extension uses:
 - `activeTab`: Interact with the current tab
 - `tabs`: Reload tabs when settings change
 - `declarativeNetRequest`: Block domains at the network level
-- `host_permissions`: Access LinkedIn, Twitter/X, and all domains for blocking
+- `host_permissions`: Access LinkedIn, Twitter/X, YouTube, and all domains for blocking
 
 ## Troubleshooting
 
@@ -120,9 +132,14 @@ The extension uses:
 4. Check that the toggle is enabled in the popup
 
 **Still seeing feeds?**
-- LinkedIn and Twitter frequently update their HTML structure
+- LinkedIn, Twitter, and YouTube frequently update their HTML structure
 - The selectors in the content scripts may need updating
-- Open an issue or modify the selectors in `content-linkedin.js` or `content-twitter.js`
+- Open an issue or modify the selectors in `content-linkedin.js`, `content-twitter.js`, or `content-youtube.js`
+
+**Twitter profile pages not showing posts?**
+- This issue has been fixed in v1.2.0
+- Profile pages, status pages, and search results now work correctly
+- Only the home feed "For You" tab is blocked
 
 ## Development
 
@@ -131,7 +148,7 @@ To modify the extension:
 1. Edit the relevant files
 2. Go to `chrome://extensions/`
 3. Click the refresh icon on the Focus Helper card
-4. Reload any open LinkedIn/Twitter tabs
+4. Reload any open LinkedIn/Twitter/YouTube tabs
 
 ## Privacy
 
@@ -139,7 +156,7 @@ This extension:
 - ✅ Runs entirely locally in your browser
 - ✅ Does not collect any data
 - ✅ Does not make external network requests
-- ✅ Only accesses LinkedIn and Twitter pages you visit
+- ✅ Only accesses LinkedIn, Twitter, and YouTube pages you visit
 
 ## License
 
@@ -152,15 +169,36 @@ Found a bug or want to add a feature? Feel free to:
 2. Make your changes
 3. Submit a pull request
 
+## Changelog
+
+### v1.2.0 (Latest)
+- ✅ Added YouTube recommendations blocking (homepage, sidebar, end screens, comments)
+- ✅ Fixed Twitter profile pages not showing posts
+- ✅ Improved Twitter blocking to only affect home feed
+- ✅ Profile pages, status pages, and search results now work correctly on Twitter
+
+### v1.1.0
+- Added domain blocking feature
+- Added master toggle functionality
+- Fixed LinkedIn SPA navigation
+- Fixed domain matching
+- Added Twitter sidebar blocking
+
+### v1.0.0
+- Initial release
+- LinkedIn feed blocking
+- Twitter "For You" tab blocking
+
 ## Future Enhancements
 
 Potential features to add:
 - [ ] Block Facebook News Feed
 - [ ] Block Instagram Explore
 - [ ] Block Reddit Popular/All
+- [ ] Toggle for YouTube comments separately
 - [ ] Custom block schedules (e.g., only during work hours)
 - [ ] Statistics tracking (time saved)
-- [ ] Whitelist specific accounts
+- [ ] Whitelist specific YouTube channels
 - [ ] Password protection for settings
 
 ---
