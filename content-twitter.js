@@ -130,51 +130,8 @@
       return;
     }
 
-    // Don't hide sidebars on profile pages, status pages, or other content pages
-    const currentPath = window.location.pathname;
-    // Matches /username, /username/with_replies, /username/media, /username/likes, etc.
-    const isProfilePage = currentPath.match(/^\/[^\/]+(?:\/(with_replies|media|likes|followers|following|highlights))?$/);
-    const isStatusPage = currentPath.includes('/status/');
-    const isContentPage = currentPath.includes('/search') || 
-                          currentPath.includes('/notifications') || 
-                          currentPath.includes('/messages') ||
-                          currentPath.includes('/explore');
-    
-    if (isProfilePage || isStatusPage || isContentPage) {
-      return; // Don't block sidebars on these pages
-    }
-
-    // Hide "What's happening" and "Who to follow" sections specifically
-    // More targeted approach to preserve search field
-    const sidebarSelectors = [
-      '[data-testid="trend"]',
-      '[data-testid="cellInnerDiv"] [aria-label*="Timeline: Trending"]',
-      'aside[aria-label*="Who to follow"]',
-      'section[aria-labelledby*="accessible-list"] div[data-testid="UserCell"]',
-    ];
-
-    sidebarSelectors.forEach(selector => {
-      const elements = document.querySelectorAll(selector);
-      elements.forEach(el => {
-        if (!el.classList.contains('focus-helper-sidebar-blocked')) {
-          el.classList.add('focus-helper-sidebar-blocked');
-        }
-      });
-    });
-
-    // Hide trending module by finding parent containers with specific text
-    const sections = document.querySelectorAll('section');
-    sections.forEach(section => {
-      const heading = section.querySelector('h2');
-      if (heading) {
-        const text = heading.textContent.toLowerCase();
-        if (text.includes("what's happening") || text.includes('trending') || text.includes('who to follow')) {
-          if (!section.classList.contains('focus-helper-sidebar-blocked')) {
-            section.classList.add('focus-helper-sidebar-blocked');
-          }
-        }
-      }
-    });
+    // Use CSS-based blocking for more reliable hiding
+    // This works better with Twitter's dynamic loading
   }
 
   function addBlockingStyles() {
@@ -188,6 +145,20 @@
       }
       
       .focus-helper-sidebar-blocked {
+        display: none !important;
+      }
+      
+      /* Block sidebar recommendations using CSS - more reliable for dynamic content */
+      [data-testid="sidebarColumn"] [data-testid="trend"],
+      [data-testid="sidebarColumn"] aside,
+      aside[aria-label*="Subscribe"],
+      div[data-testid="sidebarColumn"] > div > div > div > div > section {
+        display: none !important;
+      }
+      
+      /* Hide specific recommendation sections by content */
+      [aria-label*="Timeline: Trending"],
+      aside[aria-label*="Who to follow"] {
         display: none !important;
       }
       

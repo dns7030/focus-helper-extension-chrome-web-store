@@ -83,6 +83,12 @@
     const currentPath = window.location.pathname;
     const isHomePage = currentPath === '/' || currentPath === '';
     const isWatchPage = currentPath.startsWith('/watch');
+    const isChannelPage = currentPath.startsWith('/@') || currentPath.startsWith('/channel/') || currentPath.startsWith('/c/');
+
+    // Don't block anything on channel pages
+    if (isChannelPage) {
+      return;
+    }
 
     // Block homepage feed
     if (isHomePage) {
@@ -167,20 +173,8 @@
   }
 
   function blockComments() {
-    // Hide comments section (optional, can be toggled separately if needed)
-    const commentSelectors = [
-      'ytd-comments',
-      '#comments'
-    ];
-
-    commentSelectors.forEach(selector => {
-      const elements = document.querySelectorAll(selector);
-      elements.forEach(el => {
-        if (!el.classList.contains('focus-helper-comments-blocked')) {
-          el.classList.add('focus-helper-comments-blocked');
-        }
-      });
-    });
+    // Comments are now blocked via CSS for more reliable hiding
+    // No need for JavaScript manipulation
   }
 
   function blockShorts() {
@@ -216,6 +210,14 @@
       }
       
       .focus-helper-comments-blocked {
+        display: none !important;
+      }
+      
+      /* Block comments section with CSS - more reliable */
+      ytd-comments#comments,
+      #comments.ytd-watch-flexy,
+      ytd-comments-header-renderer,
+      ytd-comment-thread-renderer {
         display: none !important;
       }
       
