@@ -132,11 +132,9 @@
   }
 
   function blockWatchPageSidebar() {
-    // Hide recommended videos sidebar on watch page
+    // Hide recommended videos sidebar on watch page (but allow playlists)
     const sidebarSelectors = [
       '#related',
-      '#secondary',
-      'ytd-watch-next-secondary-results-renderer',
       'ytd-compact-video-renderer',
       'ytd-compact-autoplay-renderer'
     ];
@@ -149,17 +147,24 @@
         }
       });
     });
+    
+    // Block specific items in secondary but not the whole container
+    const secondaryItems = document.querySelectorAll('#secondary ytd-compact-video-renderer, #secondary ytd-compact-autoplay-renderer');
+    secondaryItems.forEach(el => {
+      if (!el.classList.contains('focus-helper-sidebar-blocked')) {
+        el.classList.add('focus-helper-sidebar-blocked');
+      }
+    });
   }
 
   function blockEndScreens() {
-    // Hide end screen video suggestions
+    // Hide end screen video suggestions (but allow playlists)
     const endScreenSelectors = [
-      '.ytp-ce-element',
+      '.ytp-ce-element:not(.ytp-ce-playlist)',
       '.ytp-endscreen-content',
       '.ytp-ce-covering-overlay',
-      '.ytp-ce-element-show',
-      '.ytp-ce-video',
-      '.ytp-ce-playlist'
+      '.ytp-ce-element-show:not(.ytp-ce-playlist)',
+      '.ytp-ce-video'
     ];
 
     endScreenSelectors.forEach(selector => {
@@ -249,16 +254,6 @@
         line-height: 1.6;
         margin: 8px 0;
         opacity: 0.95;
-      }
-      
-      /* Hide autoplay toggle when sidebar is blocked */
-      ytd-watch-flexy[flexy] #secondary.ytd-watch-flexy {
-        display: none !important;
-      }
-      
-      /* Expand video player when sidebar is hidden */
-      ytd-watch-flexy[flexy][is-two-columns_] #primary.ytd-watch-flexy {
-        max-width: 100% !important;
       }
     `;
     document.head.appendChild(style);
