@@ -24,13 +24,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const enabled = masterToggle.checked;
     chrome.storage.sync.set({ masterEnabled: enabled }, function() {
       showStatus(enabled ? 'All blocking enabled' : 'All blocking disabled');
-      
-      // Reload all LinkedIn, Twitter, and YouTube tabs
-      chrome.tabs.query({ url: ['*://*.linkedin.com/*', '*://*.twitter.com/*', '*://*.x.com/*', '*://*.youtube.com/*'] }, function(tabs) {
-        tabs.forEach(tab => {
-          chrome.tabs.reload(tab.id);
-        });
-      });
     });
   });
 
@@ -39,13 +32,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const enabled = linkedinToggle.checked;
     chrome.storage.sync.set({ linkedinEnabled: enabled }, function() {
       showStatus('Settings saved');
-      
-      // Reload LinkedIn tabs
-      chrome.tabs.query({ url: '*://*.linkedin.com/*' }, function(tabs) {
-        tabs.forEach(tab => {
-          chrome.tabs.reload(tab.id);
-        });
-      });
     });
   });
 
@@ -54,13 +40,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const enabled = twitterToggle.checked;
     chrome.storage.sync.set({ twitterEnabled: enabled }, function() {
       showStatus('Settings saved');
-      
-      // Reload Twitter/X tabs
-      chrome.tabs.query({ url: ['*://*.twitter.com/*', '*://*.x.com/*'] }, function(tabs) {
-        tabs.forEach(tab => {
-          chrome.tabs.reload(tab.id);
-        });
-      });
     });
   });
 
@@ -69,13 +48,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const enabled = youtubeToggle.checked;
     chrome.storage.sync.set({ youtubeEnabled: enabled }, function() {
       showStatus('Settings saved');
-      
-      // Reload YouTube tabs
-      chrome.tabs.query({ url: '*://*.youtube.com/*' }, function(tabs) {
-        tabs.forEach(tab => {
-          chrome.tabs.reload(tab.id);
-        });
-      });
     });
   });
 
