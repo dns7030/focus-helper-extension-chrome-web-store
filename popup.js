@@ -43,13 +43,56 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Save YouTube setting
+  // Save YouTube setting with work hours timer
+  let youtubeCountdown = null;
+
   youtubeToggle.addEventListener('change', function() {
     const enabled = youtubeToggle.checked;
-    chrome.storage.sync.set({ youtubeEnabled: enabled }, function() {
-      showStatus('Settings saved');
-    });
+
+    // Check if it's work hours and user is trying to enable recommendations
+    if (enabled && isWorkHours()) {
+      // Prevent immediate toggle
+      youtubeToggle.checked = false;
+
+      // Clear any existing countdown
+      if (youtubeCountdown) {
+        clearInterval(youtubeCountdown);
+      }
+
+      // Start 15 second countdown
+      let secondsLeft = 15;
+      showStatus(`Wait ${secondsLeft}s to enable during work hours...`, false);
+
+      youtubeCountdown = setInterval(() => {
+        secondsLeft--;
+        if (secondsLeft > 0) {
+          showStatus(`Wait ${secondsLeft}s to enable during work hours...`, false);
+        } else {
+          clearInterval(youtubeCountdown);
+          youtubeCountdown = null;
+          // Now enable it
+          youtubeToggle.checked = true;
+          chrome.storage.sync.set({ youtubeEnabled: true }, function() {
+            showStatus('YouTube recommendations enabled');
+          });
+        }
+      }, 1000);
+    } else {
+      // Outside work hours or disabling - work normally
+      chrome.storage.sync.set({ youtubeEnabled: enabled }, function() {
+        showStatus('Settings saved');
+      });
+    }
   });
+
+  function isWorkHours() {
+    const now = new Date();
+    const day = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    const hour = now.getHours(); // 0-23
+
+    // Monday to Friday (1-5) and 9am to 6pm (9-17, since 18 is 6pm start)
+    return day >= 1 && day <= 5 && hour >= 9 && hour < 18;
+  }
 
   // Add domain
   addDomainBtn.addEventListener('click', addDomain);
