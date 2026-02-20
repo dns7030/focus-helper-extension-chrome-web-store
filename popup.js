@@ -49,8 +49,8 @@ document.addEventListener('DOMContentLoaded', function() {
   youtubeToggle.addEventListener('change', function() {
     const enabled = youtubeToggle.checked;
 
-    // Check if it's work hours and user is trying to enable recommendations
-    if (enabled && isWorkHours()) {
+    // Check if it's work hours and user is trying to disable blocking (allow recommendations back)
+    if (!enabled && isWorkHours()) {
       // Prevent immediate toggle
       youtubeToggle.checked = false;
 
