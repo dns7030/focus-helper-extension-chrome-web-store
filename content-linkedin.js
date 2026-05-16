@@ -92,19 +92,14 @@
       return;
     }
 
-    // Direct CSS injection — more reliable than adding classes to elements
-    // since LinkedIn's class names change frequently
+    // Direct CSS injection using verified stable selectors
+    // (LinkedIn randomizes all class names, but data-testid and aria-label are stable)
     if (!document.querySelector('#focus-helper-feed-block')) {
       const style = document.createElement('style');
       style.id = 'focus-helper-feed-block';
       style.textContent = `
-        [class*="scaffold-layout__main"],
-        [class*="scaffold-finite-scroll"],
-        [class*="feed-shared-update"],
-        [class*="occludable-update"],
-        [data-view-name*="feed"],
-        .core-rail,
-        [role="main"] {
+        [data-testid="mainFeed"],
+        section[aria-label="Primary content"] {
           display: none !important;
         }
       `;

@@ -148,21 +148,19 @@
         display: none !important;
       }
       
-      /* Block sidebar recommendations using CSS - more reliable for dynamic content */
-      [data-testid="sidebarColumn"] [data-testid="trend"],
-      [data-testid="sidebarColumn"] aside,
-      aside[aria-label*="Subscribe"],
-      div[data-testid="sidebarColumn"] > div > div > div > div > section {
+      /* Today's News widget (verified data-testid) */
+      [data-testid="news_sidebar"] {
         display: none !important;
       }
 
-      /* Hide specific recommendation sections by content */
-      [aria-label*="Timeline: Trending"],
-      [aria-label*="Timeline: Today" i],
-      [aria-label*="Today's news" i],
-      [data-testid="trendingTopicsContainer"],
-      [data-testid="trendingTopics"],
-      aside[aria-label*="Who to follow"] {
+      /* What's happening / Trending (verified aria-labels) */
+      [aria-label="Trending"],
+      [aria-label="Timeline: Trending now"] {
+        display: none !important;
+      }
+
+      /* Who to follow + Subscribe to Premium (both aside elements in sidebar) */
+      [data-testid="sidebarColumn"] aside {
         display: none !important;
       }
       
