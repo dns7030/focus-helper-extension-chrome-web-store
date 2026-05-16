@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
+  const version = chrome.runtime.getManifest().version;
+  document.getElementById('appVersion').textContent = version;
+
   const masterToggle = document.getElementById('masterToggle');
   const linkedinToggle = document.getElementById('linkedinToggle');
   const twitterToggle = document.getElementById('twitterToggle');
