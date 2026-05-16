@@ -155,9 +155,13 @@
       div[data-testid="sidebarColumn"] > div > div > div > div > section {
         display: none !important;
       }
-      
+
       /* Hide specific recommendation sections by content */
       [aria-label*="Timeline: Trending"],
+      [aria-label*="Timeline: Today" i],
+      [aria-label*="Today's news" i],
+      [data-testid="trendingTopicsContainer"],
+      [data-testid="trendingTopics"],
       aside[aria-label*="Who to follow"] {
         display: none !important;
       }

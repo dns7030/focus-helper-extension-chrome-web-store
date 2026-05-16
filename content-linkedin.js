@@ -67,10 +67,10 @@
       const currentUrl = location.href;
       if (currentUrl !== lastUrl) {
         lastUrl = currentUrl;
-        // URL changed, re-check and apply blocking
-        setTimeout(() => {
-          hideFeedElements();
-        }, 100);
+        // Run immediately and again after content loads
+        hideFeedElements();
+        setTimeout(hideFeedElements, 300);
+        setTimeout(hideFeedElements, 1000);
       }
     }).observe(document, { subtree: true, childList: true });
 
@@ -79,52 +79,58 @@
   }
 
   function hideFeedElements() {
-    // Check if blocking is enabled
     if (!isEnabled || !masterEnabled) {
+      removeFeedBlock();
       return;
     }
-    
-    // Only block on feed pages
+
     const currentPath = window.location.pathname;
     const isFeedPage = currentPath === '/feed/' || currentPath === '/feed' || currentPath === '/';
-    
+
     if (!isFeedPage) {
-      return; // Don't block on other pages like connections, messaging, etc.
+      removeFeedBlock();
+      return;
     }
 
-    // Hide main feed container
-    const feedSelectors = [
-      'main.scaffold-layout__main',
-      '.feed-shared-update-v2',
-      '.scaffold-finite-scroll',
-      '[role="main"]',
-      '.core-rail',
-      'div.feed-shared-update-v2__description-wrapper'
-    ];
-
-    feedSelectors.forEach(selector => {
-      const elements = document.querySelectorAll(selector);
-      elements.forEach(el => {
-        if (!el.classList.contains('focus-helper-blocked')) {
-          el.classList.add('focus-helper-blocked');
+    // Direct CSS injection — more reliable than adding classes to elements
+    // since LinkedIn's class names change frequently
+    if (!document.querySelector('#focus-helper-feed-block')) {
+      const style = document.createElement('style');
+      style.id = 'focus-helper-feed-block';
+      style.textContent = `
+        [class*="scaffold-layout__main"],
+        [class*="scaffold-finite-scroll"],
+        [class*="feed-shared-update"],
+        [class*="occludable-update"],
+        [data-view-name*="feed"],
+        .core-rail,
+        [role="main"] {
+          display: none !important;
         }
-      });
-    });
+      `;
+      (document.head || document.documentElement).appendChild(style);
+    }
 
-    // Show a message instead of the feed
-    const main = document.querySelector('main.scaffold-layout__main');
-    if (main && !document.querySelector('.focus-helper-message')) {
+    // Also show a blocking message in the body
+    if (!document.querySelector('.focus-helper-message')) {
       const message = document.createElement('div');
       message.className = 'focus-helper-message';
       message.innerHTML = `
         <div class="focus-helper-content">
-          <h2>🎯 Stay Focused</h2>
+          <h2>Stay Focused</h2>
           <p>The LinkedIn feed is blocked to help you stay productive.</p>
           <p>Use the search, messages, or notifications to find what you need.</p>
         </div>
       `;
-      main.parentNode.insertBefore(message, main);
+      (document.body || document.documentElement).appendChild(message);
     }
+  }
+
+  function removeFeedBlock() {
+    const style = document.querySelector('#focus-helper-feed-block');
+    if (style) style.remove();
+    const message = document.querySelector('.focus-helper-message');
+    if (message) message.remove();
   }
 
   function addBlockingStyles() {
@@ -171,17 +177,13 @@
   }
 
   function unblockFeed() {
-    // Remove blocking styles
     const style = document.querySelector('#focus-helper-linkedin-styles');
     if (style) style.remove();
 
-    // Remove blocked class
     document.querySelectorAll('.focus-helper-blocked').forEach(el => {
       el.classList.remove('focus-helper-blocked');
     });
 
-    // Remove message
-    const message = document.querySelector('.focus-helper-message');
-    if (message) message.remove();
+    removeFeedBlock();
   }
 })();
