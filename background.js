@@ -1,48 +1,53 @@
 // Background service worker for domain blocking
 
 const BLOCKED_DOMAINS_KEY = 'blockedDomains';
+const WHITELISTED_SUBDOMAINS_KEY = 'whitelistedSubdomains';
 
-// Initialize blocked domains list
+// Initialize blocked domains and whitelist
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.sync.get([BLOCKED_DOMAINS_KEY], (result) => {
+  chrome.storage.sync.get([BLOCKED_DOMAINS_KEY, WHITELISTED_SUBDOMAINS_KEY], (result) => {
     if (!result[BLOCKED_DOMAINS_KEY]) {
       chrome.storage.sync.set({ [BLOCKED_DOMAINS_KEY]: [] });
+    }
+    if (!result[WHITELISTED_SUBDOMAINS_KEY]) {
+      chrome.storage.sync.set({ [WHITELISTED_SUBDOMAINS_KEY]: {} });
     }
   });
 });
 
 // Listen for storage changes and update blocking rules
 chrome.storage.onChanged.addListener((changes, namespace) => {
-  if (changes[BLOCKED_DOMAINS_KEY]) {
-    chrome.storage.sync.get(['masterEnabled'], (result) => {
+  if (changes[BLOCKED_DOMAINS_KEY] || changes[WHITELISTED_SUBDOMAINS_KEY]) {
+    chrome.storage.sync.get(['masterEnabled', BLOCKED_DOMAINS_KEY, WHITELISTED_SUBDOMAINS_KEY], (result) => {
       const masterEnabled = result.masterEnabled !== false;
       if (masterEnabled) {
-        updateBlockingRules(changes[BLOCKED_DOMAINS_KEY].newValue || []);
+        updateBlockingRules(result[BLOCKED_DOMAINS_KEY] || [], result[WHITELISTED_SUBDOMAINS_KEY] || {});
       }
     });
   }
-  
+
   // When master toggle changes, update rules accordingly
   if (changes.masterEnabled) {
-    chrome.storage.sync.get([BLOCKED_DOMAINS_KEY], (result) => {
+    chrome.storage.sync.get([BLOCKED_DOMAINS_KEY, WHITELISTED_SUBDOMAINS_KEY], (result) => {
       const domains = result[BLOCKED_DOMAINS_KEY] || [];
+      const whitelist = result[WHITELISTED_SUBDOMAINS_KEY] || {};
       if (changes.masterEnabled.newValue) {
         // Re-enable blocking
-        updateBlockingRules(domains);
+        updateBlockingRules(domains, whitelist);
       } else {
         // Disable blocking by removing all rules
-        updateBlockingRules([]);
+        updateBlockingRules([], {});
       }
     });
   }
 });
 
-// Update declarativeNetRequest rules based on blocked domains
-async function updateBlockingRules(blockedDomains) {
+// Update declarativeNetRequest rules based on blocked domains and whitelist
+async function updateBlockingRules(blockedDomains, whitelistedSubdomains = {}) {
   // Remove all existing dynamic rules
   const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
   const existingRuleIds = existingRules.map(rule => rule.id);
-  
+
   if (existingRuleIds.length > 0) {
     await chrome.declarativeNetRequest.updateDynamicRules({
       removeRuleIds: existingRuleIds
@@ -53,27 +58,50 @@ async function updateBlockingRules(blockedDomains) {
   if (blockedDomains.length === 0) return;
 
   const newRules = [];
-  blockedDomains.forEach((domain, index) => {
-    const baseId = (index * 2) + 1;
+  let ruleId = 1;
+
+  blockedDomains.forEach((domain) => {
     const redirectUrl = 'https://www.google.com';
-    
-    // Rule 1: Match with subdomain (*.domain.com)
+    const whitelist = whitelistedSubdomains[domain] || [];
+
+    // Rule for subdomains: only if there are whitelisted exceptions, use regex; otherwise use wildcard
+    if (whitelist.length > 0) {
+      // Create regex that blocks *.domain but NOT the whitelisted subdomains
+      const escapedDomain = domain.replace(/\./g, '\\.');
+      const negativeAssertions = whitelist.map(sub => `(?!${sub}\.${escapedDomain})`).join('');
+      const regexPattern = `^https?://${negativeAssertions}[^/]*\.${escapedDomain}/`;
+
+      newRules.push({
+        id: ruleId++,
+        priority: 2,
+        action: {
+          type: 'redirect',
+          redirect: { url: redirectUrl }
+        },
+        condition: {
+          regexFilter: regexPattern,
+          resourceTypes: ['main_frame']
+        }
+      });
+    } else {
+      // No exceptions - use simple wildcard
+      newRules.push({
+        id: ruleId++,
+        priority: 1,
+        action: {
+          type: 'redirect',
+          redirect: { url: redirectUrl }
+        },
+        condition: {
+          urlFilter: `*://*.${domain}/*`,
+          resourceTypes: ['main_frame']
+        }
+      });
+    }
+
+    // Rule for domain without subdomain
     newRules.push({
-      id: baseId,
-      priority: 1,
-      action: {
-        type: 'redirect',
-        redirect: { url: redirectUrl }
-      },
-      condition: {
-        urlFilter: `*://*.${domain}/*`,
-        resourceTypes: ['main_frame']
-      }
-    });
-    
-    // Rule 2: Match without subdomain (domain.com)
-    newRules.push({
-      id: baseId + 1,
+      id: ruleId++,
       priority: 1,
       action: {
         type: 'redirect',
@@ -92,15 +120,16 @@ async function updateBlockingRules(blockedDomains) {
 }
 
 // Initialize rules on startup
-chrome.storage.sync.get(['masterEnabled', BLOCKED_DOMAINS_KEY], (result) => {
+chrome.storage.sync.get(['masterEnabled', BLOCKED_DOMAINS_KEY, WHITELISTED_SUBDOMAINS_KEY], (result) => {
   const masterEnabled = result.masterEnabled !== false;
   const domains = result[BLOCKED_DOMAINS_KEY] || [];
-  
+  const whitelist = result[WHITELISTED_SUBDOMAINS_KEY] || {};
+
   // Only apply rules if master toggle is enabled
   if (masterEnabled) {
-    updateBlockingRules(domains);
+    updateBlockingRules(domains, whitelist);
   } else {
-    updateBlockingRules([]);
+    updateBlockingRules([], {});
   }
 });
 
@@ -135,6 +164,49 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       chrome.storage.sync.set({ [BLOCKED_DOMAINS_KEY]: filtered }, () => {
         sendResponse({ success: true });
       });
+    });
+    return true;
+  }
+
+  if (request.action === 'addWhitelistedSubdomain') {
+    chrome.storage.sync.get([WHITELISTED_SUBDOMAINS_KEY], (result) => {
+      const whitelist = result[WHITELISTED_SUBDOMAINS_KEY] || {};
+      if (!whitelist[request.domain]) {
+        whitelist[request.domain] = [];
+      }
+      if (!whitelist[request.domain].includes(request.subdomain)) {
+        whitelist[request.domain].push(request.subdomain);
+        chrome.storage.sync.set({ [WHITELISTED_SUBDOMAINS_KEY]: whitelist }, () => {
+          sendResponse({ success: true });
+        });
+      } else {
+        sendResponse({ success: false, error: 'Subdomain already whitelisted' });
+      }
+    });
+    return true;
+  }
+
+  if (request.action === 'removeWhitelistedSubdomain') {
+    chrome.storage.sync.get([WHITELISTED_SUBDOMAINS_KEY], (result) => {
+      const whitelist = result[WHITELISTED_SUBDOMAINS_KEY] || {};
+      if (whitelist[request.domain]) {
+        whitelist[request.domain] = whitelist[request.domain].filter(sub => sub !== request.subdomain);
+        if (whitelist[request.domain].length === 0) {
+          delete whitelist[request.domain];
+        }
+        chrome.storage.sync.set({ [WHITELISTED_SUBDOMAINS_KEY]: whitelist }, () => {
+          sendResponse({ success: true });
+        });
+      } else {
+        sendResponse({ success: false, error: 'Subdomain not found' });
+      }
+    });
+    return true;
+  }
+
+  if (request.action === 'getWhitelistedSubdomains') {
+    chrome.storage.sync.get([WHITELISTED_SUBDOMAINS_KEY], (result) => {
+      sendResponse({ subdomains: result[WHITELISTED_SUBDOMAINS_KEY] || {} });
     });
     return true;
   }

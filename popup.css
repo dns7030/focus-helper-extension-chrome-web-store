@@ -233,9 +233,8 @@ input:checked + .slider:before {
 
 .blocked-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 12px;
+  flex-direction: column;
+  padding: 12px;
   background: #f8f9fa;
   border-radius: 6px;
   margin-bottom: 8px;
@@ -248,6 +247,13 @@ input:checked + .slider:before {
 
 .blocked-item:last-child {
   margin-bottom: 0;
+}
+
+.domain-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
 }
 
 .blocked-domain {
@@ -298,4 +304,100 @@ input:checked + .slider:before {
 
 .blocked-list::-webkit-scrollbar-thumb:hover {
   background: #999;
+}
+
+.exceptions-list {
+  margin: 8px 0;
+  padding: 8px 0;
+  border-top: 1px solid #ddd;
+}
+
+.exceptions-label {
+  font-size: 11px;
+  color: #666;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.exception-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  background: #e7f3ff;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.exception-item:last-child {
+  margin-bottom: 0;
+}
+
+.exception-subdomain {
+  color: #0066cc;
+  font-weight: 500;
+}
+
+.remove-exception {
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  padding: 0;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+.remove-exception:hover {
+  background: #ee5a52;
+}
+
+.add-exception-form {
+  display: flex;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid #ddd;
+}
+
+.exception-input {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.exception-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.add-exception {
+  padding: 6px 12px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.add-exception:hover {
+  background: #218838;
 }

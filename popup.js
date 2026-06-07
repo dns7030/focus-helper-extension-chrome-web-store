@@ -19,8 +19,9 @@ document.addEventListener('DOMContentLoaded', function() {
     youtubeToggle.checked = result.youtubeEnabled !== false;
   });
 
-  // Load blocked domains
+  // Load blocked domains and whitelist
   loadBlockedDomains();
+  loadWhitelistedSubdomains();
 
   // Master toggle - controls all blocking
   masterToggle.addEventListener('change', function() {
@@ -142,6 +143,8 @@ document.addEventListener('DOMContentLoaded', function() {
     );
   }
 
+  let whitelistData = {};
+
   function loadBlockedDomains() {
     chrome.runtime.sendMessage(
       { action: 'getBlockedDomains' },
@@ -152,24 +155,100 @@ document.addEventListener('DOMContentLoaded', function() {
     );
   }
 
+  function loadWhitelistedSubdomains() {
+    chrome.runtime.sendMessage(
+      { action: 'getWhitelistedSubdomains' },
+      function(response) {
+        whitelistData = response.subdomains || {};
+        // Re-render if domains are already loaded
+        if (blockedList.innerHTML && blockedList.innerHTML !== '<div class="empty-state">No blocked domains yet</div>') {
+          chrome.runtime.sendMessage(
+            { action: 'getBlockedDomains' },
+            function(response) {
+              renderBlockedDomains(response.domains || []);
+            }
+          );
+        }
+      }
+    );
+  }
+
   function renderBlockedDomains(domains) {
     if (domains.length === 0) {
       blockedList.innerHTML = '<div class="empty-state">No blocked domains yet</div>';
       return;
     }
 
-    blockedList.innerHTML = domains.map(domain => `
-      <div class="blocked-item">
-        <span class="blocked-domain">${domain}</span>
-        <button class="remove-domain" data-domain="${domain}">Remove</button>
-      </div>
-    `).join('');
+    blockedList.innerHTML = domains.map(domain => {
+      const whitelistedSubs = whitelistData[domain] || [];
+      const hasExceptions = whitelistedSubs.length > 0;
+
+      return `
+        <div class="blocked-item">
+          <div class="domain-row">
+            <span class="blocked-domain">${domain}</span>
+            <button class="remove-domain" data-domain="${domain}">Remove</button>
+          </div>
+          ${hasExceptions ? `
+            <div class="exceptions-list">
+              <div class="exceptions-label">Allowed:</div>
+              ${whitelistedSubs.map(sub => `
+                <div class="exception-item">
+                  <span class="exception-subdomain">${sub}.${domain}</span>
+                  <button class="remove-exception" data-domain="${domain}" data-subdomain="${sub}">×</button>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+          <div class="add-exception-form">
+            <input type="text" class="exception-input" placeholder="Subdomain (e.g., music)" data-domain="${domain}" />
+            <button class="add-exception" data-domain="${domain}">Allow</button>
+          </div>
+        </div>
+      `;
+    }).join('');
 
     // Add event listeners to remove buttons
     blockedList.querySelectorAll('.remove-domain').forEach(btn => {
       btn.addEventListener('click', function() {
         const domain = this.getAttribute('data-domain');
         removeDomain(domain);
+      });
+    });
+
+    // Add event listeners to add exception buttons
+    blockedList.querySelectorAll('.add-exception').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const domain = this.getAttribute('data-domain');
+        const input = blockedList.querySelector(`.exception-input[data-domain="${domain}"]`);
+        const subdomain = input.value.trim().toLowerCase();
+        if (subdomain) {
+          addException(domain, subdomain);
+        } else {
+          showStatus('Please enter a subdomain', true);
+        }
+      });
+    });
+
+    // Add event listeners to exception inputs for Enter key
+    blockedList.querySelectorAll('.exception-input').forEach(input => {
+      input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          const domain = this.getAttribute('data-domain');
+          const subdomain = this.value.trim().toLowerCase();
+          if (subdomain) {
+            addException(domain, subdomain);
+          }
+        }
+      });
+    });
+
+    // Add event listeners to remove exception buttons
+    blockedList.querySelectorAll('.remove-exception').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const domain = this.getAttribute('data-domain');
+        const subdomain = this.getAttribute('data-subdomain');
+        removeException(domain, subdomain);
       });
     });
   }
@@ -183,6 +262,34 @@ document.addEventListener('DOMContentLoaded', function() {
           showStatus(`Unblocked ${domain}`);
         } else {
           showStatus('Failed to remove domain', true);
+        }
+      }
+    );
+  }
+
+  function addException(domain, subdomain) {
+    chrome.runtime.sendMessage(
+      { action: 'addWhitelistedSubdomain', domain: domain, subdomain: subdomain },
+      function(response) {
+        if (response.success) {
+          loadWhitelistedSubdomains();
+          showStatus(`Allowed ${subdomain}.${domain}`);
+        } else {
+          showStatus(response.error || 'Failed to add exception', true);
+        }
+      }
+    );
+  }
+
+  function removeException(domain, subdomain) {
+    chrome.runtime.sendMessage(
+      { action: 'removeWhitelistedSubdomain', domain: domain, subdomain: subdomain },
+      function(response) {
+        if (response.success) {
+          loadWhitelistedSubdomains();
+          showStatus(`Blocked ${subdomain}.${domain}`);
+        } else {
+          showStatus('Failed to remove exception', true);
         }
       }
     );
