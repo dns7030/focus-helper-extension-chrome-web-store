@@ -13,8 +13,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const redirectInput = document.getElementById('redirectInput');
 
   // Load saved settings
-  chrome.storage.sync.get(['masterEnabled', 'linkedinEnabled', 'twitterEnabled', 'youtubeEnabled'], function(result) {
-    masterToggle.checked = result.masterEnabled !== false;
+  chrome.storage.sync.get(['domainsEnabled', 'linkedinEnabled', 'twitterEnabled', 'youtubeEnabled'], function(result) {
+    masterToggle.checked = result.domainsEnabled !== false;
     linkedinToggle.checked = result.linkedinEnabled !== false;
     twitterToggle.checked = result.twitterEnabled !== false;
     youtubeToggle.checked = result.youtubeEnabled !== false;
@@ -51,11 +51,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Master toggle - controls all blocking
+  // Domain blocking toggle - controls only domain blocking
   masterToggle.addEventListener('change', function() {
     const enabled = masterToggle.checked;
-    chrome.storage.sync.set({ masterEnabled: enabled }, function() {
-      showStatus(enabled ? 'All blocking enabled' : 'All blocking disabled');
+    chrome.storage.sync.set({ domainsEnabled: enabled }, function() {
+      showStatus(enabled ? 'Domain blocking enabled' : 'Domain blocking disabled');
     });
   });
 

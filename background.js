@@ -23,15 +23,14 @@ chrome.runtime.onInstalled.addListener(() => {
 // Read all settings from storage and (re)apply the blocking rules.
 function refreshRules() {
   chrome.storage.sync.get(
-    ['masterEnabled', BLOCKED_DOMAINS_KEY, WHITELISTED_SUBDOMAINS_KEY, REDIRECT_URL_KEY],
+    ['domainsEnabled', BLOCKED_DOMAINS_KEY, WHITELISTED_SUBDOMAINS_KEY, REDIRECT_URL_KEY],
     (result) => {
-      const masterEnabled = result.masterEnabled !== false;
+      const domainsEnabled = result.domainsEnabled !== false;
       const whitelist = result[WHITELISTED_SUBDOMAINS_KEY] || {};
       const redirectUrl = result[REDIRECT_URL_KEY] || DEFAULT_REDIRECT;
-      if (masterEnabled) {
+      if (domainsEnabled) {
         updateBlockingRules(result[BLOCKED_DOMAINS_KEY] || [], whitelist, redirectUrl);
       } else {
-        // Disable blocking by removing all rules
         updateBlockingRules([], {}, redirectUrl);
       }
     }
@@ -44,7 +43,7 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
     changes[BLOCKED_DOMAINS_KEY] ||
     changes[WHITELISTED_SUBDOMAINS_KEY] ||
     changes[REDIRECT_URL_KEY] ||
-    changes.masterEnabled
+    changes.domainsEnabled
   ) {
     refreshRules();
   }
