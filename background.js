@@ -2,48 +2,56 @@
 
 const BLOCKED_DOMAINS_KEY = 'blockedDomains';
 const WHITELISTED_SUBDOMAINS_KEY = 'whitelistedSubdomains';
+const REDIRECT_URL_KEY = 'redirectUrl';
+const DEFAULT_REDIRECT = 'https://www.google.com';
 
-// Initialize blocked domains and whitelist
+// Initialize blocked domains, whitelist, and redirect target
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.sync.get([BLOCKED_DOMAINS_KEY, WHITELISTED_SUBDOMAINS_KEY], (result) => {
+  chrome.storage.sync.get([BLOCKED_DOMAINS_KEY, WHITELISTED_SUBDOMAINS_KEY, REDIRECT_URL_KEY], (result) => {
     if (!result[BLOCKED_DOMAINS_KEY]) {
       chrome.storage.sync.set({ [BLOCKED_DOMAINS_KEY]: [] });
     }
     if (!result[WHITELISTED_SUBDOMAINS_KEY]) {
       chrome.storage.sync.set({ [WHITELISTED_SUBDOMAINS_KEY]: {} });
     }
+    if (!result[REDIRECT_URL_KEY]) {
+      chrome.storage.sync.set({ [REDIRECT_URL_KEY]: DEFAULT_REDIRECT });
+    }
   });
 });
 
-// Listen for storage changes and update blocking rules
-chrome.storage.onChanged.addListener((changes, namespace) => {
-  if (changes[BLOCKED_DOMAINS_KEY] || changes[WHITELISTED_SUBDOMAINS_KEY]) {
-    chrome.storage.sync.get(['masterEnabled', BLOCKED_DOMAINS_KEY, WHITELISTED_SUBDOMAINS_KEY], (result) => {
+// Read all settings from storage and (re)apply the blocking rules.
+function refreshRules() {
+  chrome.storage.sync.get(
+    ['masterEnabled', BLOCKED_DOMAINS_KEY, WHITELISTED_SUBDOMAINS_KEY, REDIRECT_URL_KEY],
+    (result) => {
       const masterEnabled = result.masterEnabled !== false;
-      if (masterEnabled) {
-        updateBlockingRules(result[BLOCKED_DOMAINS_KEY] || [], result[WHITELISTED_SUBDOMAINS_KEY] || {});
-      }
-    });
-  }
-
-  // When master toggle changes, update rules accordingly
-  if (changes.masterEnabled) {
-    chrome.storage.sync.get([BLOCKED_DOMAINS_KEY, WHITELISTED_SUBDOMAINS_KEY], (result) => {
-      const domains = result[BLOCKED_DOMAINS_KEY] || [];
       const whitelist = result[WHITELISTED_SUBDOMAINS_KEY] || {};
-      if (changes.masterEnabled.newValue) {
-        // Re-enable blocking
-        updateBlockingRules(domains, whitelist);
+      const redirectUrl = result[REDIRECT_URL_KEY] || DEFAULT_REDIRECT;
+      if (masterEnabled) {
+        updateBlockingRules(result[BLOCKED_DOMAINS_KEY] || [], whitelist, redirectUrl);
       } else {
         // Disable blocking by removing all rules
-        updateBlockingRules([], {});
+        updateBlockingRules([], {}, redirectUrl);
       }
-    });
+    }
+  );
+}
+
+// Re-apply rules whenever any setting that affects them changes
+chrome.storage.onChanged.addListener((changes, namespace) => {
+  if (
+    changes[BLOCKED_DOMAINS_KEY] ||
+    changes[WHITELISTED_SUBDOMAINS_KEY] ||
+    changes[REDIRECT_URL_KEY] ||
+    changes.masterEnabled
+  ) {
+    refreshRules();
   }
 });
 
 // Update declarativeNetRequest rules based on blocked domains and whitelist
-async function updateBlockingRules(blockedDomains, whitelistedSubdomains = {}) {
+async function updateBlockingRules(blockedDomains, whitelistedSubdomains = {}, redirectUrl = DEFAULT_REDIRECT) {
   // Remove all existing dynamic rules
   const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
   const existingRuleIds = existingRules.map(rule => rule.id);
@@ -61,7 +69,6 @@ async function updateBlockingRules(blockedDomains, whitelistedSubdomains = {}) {
   let ruleId = 1;
 
   blockedDomains.forEach((domain) => {
-    const redirectUrl = 'https://www.google.com';
     // Stored exceptions are bare subdomain labels (e.g. "music"); build full hosts.
     const whitelist = (whitelistedSubdomains[domain] || []).map(sub =>
       sub.endsWith(domain) ? sub : `${sub}.${domain}`
@@ -96,18 +103,7 @@ async function updateBlockingRules(blockedDomains, whitelistedSubdomains = {}) {
 }
 
 // Initialize rules on startup
-chrome.storage.sync.get(['masterEnabled', BLOCKED_DOMAINS_KEY, WHITELISTED_SUBDOMAINS_KEY], (result) => {
-  const masterEnabled = result.masterEnabled !== false;
-  const domains = result[BLOCKED_DOMAINS_KEY] || [];
-  const whitelist = result[WHITELISTED_SUBDOMAINS_KEY] || {};
-
-  // Only apply rules if master toggle is enabled
-  if (masterEnabled) {
-    updateBlockingRules(domains, whitelist);
-  } else {
-    updateBlockingRules([], {});
-  }
-});
+refreshRules();
 
 // Handle messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -183,6 +179,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'getWhitelistedSubdomains') {
     chrome.storage.sync.get([WHITELISTED_SUBDOMAINS_KEY], (result) => {
       sendResponse({ subdomains: result[WHITELISTED_SUBDOMAINS_KEY] || {} });
+    });
+    return true;
+  }
+
+  if (request.action === 'getRedirectUrl') {
+    chrome.storage.sync.get([REDIRECT_URL_KEY], (result) => {
+      sendResponse({ redirectUrl: result[REDIRECT_URL_KEY] || DEFAULT_REDIRECT });
+    });
+    return true;
+  }
+
+  if (request.action === 'setRedirectUrl') {
+    let url = (request.redirectUrl || '').trim();
+    if (!url) {
+      url = DEFAULT_REDIRECT;
+    } else if (!/^https?:\/\//i.test(url)) {
+      url = 'https://' + url;
+    }
+    chrome.storage.sync.set({ [REDIRECT_URL_KEY]: url }, () => {
+      sendResponse({ success: true, redirectUrl: url });
     });
     return true;
   }

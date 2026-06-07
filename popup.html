@@ -14,20 +14,6 @@
     </div>
     
     <div class="controls">
-      <div class="control-item master-toggle">
-        <div class="control-info">
-          <div class="control-icon">🚫</div>
-          <div class="control-text">
-            <h3>Block Domains</h3>
-            <p>Enable/disable domain blocking</p>
-          </div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="masterToggle" checked>
-          <span class="slider"></span>
-        </label>
-      </div>
-      
       <div class="control-item">
         <div class="control-info">
           <div class="control-icon">💼</div>
@@ -74,16 +60,30 @@
     <div class="section-divider"></div>
     
     <div class="domain-blocking">
-      <div class="section-header">
-        <h2>🚫 Block Domains</h2>
-        <p>Block entire websites</p>
+      <div class="control-item master-toggle">
+        <div class="control-info">
+          <div class="control-icon">🚫</div>
+          <div class="control-text">
+            <h3>Block Domains</h3>
+            <p>Enable/disable domain blocking</p>
+          </div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="masterToggle" checked>
+          <span class="slider"></span>
+        </label>
       </div>
-      
+
+      <div class="redirect-setting">
+        <label for="redirectInput">Redirect blocked sites to</label>
+        <input type="text" id="redirectInput" placeholder="https://www.google.com" />
+      </div>
+
       <div class="add-domain">
         <input type="text" id="domainInput" placeholder="example.com" />
         <button id="addDomain">Add</button>
       </div>
-      
+
       <div class="blocked-list" id="blockedList">
         <!-- Blocked domains will be added here dynamically -->
       </div>

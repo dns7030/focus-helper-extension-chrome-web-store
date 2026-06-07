@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const domainInput = document.getElementById('domainInput');
   const addDomainBtn = document.getElementById('addDomain');
   const blockedList = document.getElementById('blockedList');
+  const redirectInput = document.getElementById('redirectInput');
 
   // Load saved settings
   chrome.storage.sync.get(['masterEnabled', 'linkedinEnabled', 'twitterEnabled', 'youtubeEnabled'], function(result) {
@@ -22,6 +23,33 @@ document.addEventListener('DOMContentLoaded', function() {
   // Load blocked domains and whitelist
   loadBlockedDomains();
   loadWhitelistedSubdomains();
+
+  // Load redirect target
+  chrome.runtime.sendMessage({ action: 'getRedirectUrl' }, function(response) {
+    if (response && response.redirectUrl) {
+      redirectInput.value = response.redirectUrl;
+    }
+  });
+
+  // Save redirect target when the user finishes editing
+  function saveRedirectUrl() {
+    chrome.runtime.sendMessage(
+      { action: 'setRedirectUrl', redirectUrl: redirectInput.value },
+      function(response) {
+        if (response && response.success) {
+          redirectInput.value = response.redirectUrl;
+          showStatus(`Redirecting blocked sites to ${response.redirectUrl}`);
+        }
+      }
+    );
+  }
+
+  redirectInput.addEventListener('blur', saveRedirectUrl);
+  redirectInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      redirectInput.blur();
+    }
+  });
 
   // Master toggle - controls all blocking
   masterToggle.addEventListener('change', function() {
