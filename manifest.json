@@ -5,7 +5,6 @@
   "description": "Block distracting feeds on LinkedIn, Twitter, and YouTube, plus block entire domains to help you stay focused",
   "permissions": [
     "storage",
-    "activeTab",
     "declarativeNetRequest",
     "tabs"
   ],
