@@ -3,34 +3,19 @@
   'use strict';
 
   let isEnabled = true;
-  let masterEnabled = true;
 
   // Load settings from storage
-  chrome.storage.sync.get(['masterEnabled', 'twitterEnabled'], function(result) {
-    masterEnabled = result.masterEnabled !== false;
+  chrome.storage.sync.get(['twitterEnabled'], function(result) {
     isEnabled = result.twitterEnabled !== false;
-    if (isEnabled && masterEnabled) {
-      blockForYouTab();
-    }
+    if (isEnabled) blockForYouTab();
   });
 
   // Listen for settings changes
-  chrome.storage.onChanged.addListener(function(changes, namespace) {
-    if (changes.masterEnabled) {
-      masterEnabled = changes.masterEnabled.newValue;
-      if (masterEnabled && isEnabled) {
-        blockForYouTab();
-      } else {
-        unblockForYouTab();
-      }
-    }
+  chrome.storage.onChanged.addListener(function(changes) {
     if (changes.twitterEnabled) {
       isEnabled = changes.twitterEnabled.newValue;
-      if (isEnabled && masterEnabled) {
-        blockForYouTab();
-      } else {
-        unblockForYouTab();
-      }
+      if (isEnabled) blockForYouTab();
+      else unblockForYouTab();
     }
   });
 
@@ -68,7 +53,7 @@
 
   function hideForYouTab() {
     // Check if blocking is enabled
-    if (!isEnabled || !masterEnabled) {
+    if (!isEnabled) {
       return;
     }
     
@@ -86,7 +71,7 @@
 
   function switchToFollowingTab() {
     // Check if blocking is enabled
-    if (!isEnabled || !masterEnabled) {
+    if (!isEnabled) {
       return;
     }
     
@@ -126,7 +111,7 @@
 
   function hideSidebars() {
     // Check if blocking is enabled
-    if (!isEnabled || !masterEnabled) {
+    if (!isEnabled) {
       return;
     }
 
@@ -212,7 +197,7 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
       }
     `;
-    document.head.appendChild(style);
+    (document.head || document.documentElement).appendChild(style);
   }
 
   function unblockForYouTab() {

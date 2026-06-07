@@ -3,25 +3,16 @@
   'use strict';
 
   let isEnabled = true;
-  let masterEnabled = true;
 
-  chrome.storage.sync.get(['masterEnabled', 'linkedinEnabled'], function(result) {
-    masterEnabled = result.masterEnabled !== false;
+  chrome.storage.sync.get(['linkedinEnabled'], function(result) {
     isEnabled = result.linkedinEnabled !== false;
-    if (isEnabled && masterEnabled) {
-      blockFeed();
-    }
+    if (isEnabled) blockFeed();
   });
 
-  chrome.storage.onChanged.addListener(function(changes, namespace) {
-    if (changes.masterEnabled) {
-      masterEnabled = changes.masterEnabled.newValue;
-      if (masterEnabled && isEnabled) blockFeed();
-      else unblockFeed();
-    }
+  chrome.storage.onChanged.addListener(function(changes) {
     if (changes.linkedinEnabled) {
       isEnabled = changes.linkedinEnabled.newValue;
-      if (isEnabled && masterEnabled) blockFeed();
+      if (isEnabled) blockFeed();
       else unblockFeed();
     }
   });
@@ -55,7 +46,7 @@
   }
 
   function hideFeedElements() {
-    if (!isEnabled || !masterEnabled) {
+    if (!isEnabled) {
       removeFeedBlock();
       return;
     }
