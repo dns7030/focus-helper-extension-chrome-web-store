@@ -144,6 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   let whitelistData = {};
+  const expandedDomains = new Set();
 
   function loadBlockedDomains() {
     chrome.runtime.sendMessage(
@@ -181,32 +182,58 @@ document.addEventListener('DOMContentLoaded', function() {
 
     blockedList.innerHTML = domains.map(domain => {
       const whitelistedSubs = whitelistData[domain] || [];
-      const hasExceptions = whitelistedSubs.length > 0;
+      const exceptionCount = whitelistedSubs.length;
+      const isExpanded = expandedDomains.has(domain);
 
       return `
-        <div class="blocked-item">
+        <div class="blocked-item${isExpanded ? ' expanded' : ''}">
           <div class="domain-row">
-            <span class="blocked-domain">${domain}</span>
+            <button class="expand-toggle" data-domain="${domain}" title="Allowed subdomains" aria-expanded="${isExpanded}">
+              <span class="chevron">${isExpanded ? '▾' : '▸'}</span>
+              <span class="blocked-domain">${domain}</span>
+              ${exceptionCount > 0 ? `<span class="exception-count">${exceptionCount} allowed</span>` : ''}
+            </button>
             <button class="remove-domain" data-domain="${domain}">Remove</button>
           </div>
-          ${hasExceptions ? `
-            <div class="exceptions-list">
-              <div class="exceptions-label">Allowed:</div>
-              ${whitelistedSubs.map(sub => `
-                <div class="exception-item">
-                  <span class="exception-subdomain">${sub}.${domain}</span>
-                  <button class="remove-exception" data-domain="${domain}" data-subdomain="${sub}">×</button>
+          ${isExpanded ? `
+            <div class="exceptions-panel">
+              ${exceptionCount > 0 ? `
+                <div class="exceptions-list">
+                  ${whitelistedSubs.map(sub => `
+                    <div class="exception-item">
+                      <span class="exception-subdomain">${sub}.${domain}</span>
+                      <button class="remove-exception" data-domain="${domain}" data-subdomain="${sub}">×</button>
+                    </div>
+                  `).join('')}
                 </div>
-              `).join('')}
+              ` : ''}
+              <div class="add-exception-form">
+                <input type="text" class="exception-input" placeholder="Allow subdomain (e.g., music)" data-domain="${domain}" />
+                <button class="add-exception" data-domain="${domain}">Allow</button>
+              </div>
             </div>
           ` : ''}
-          <div class="add-exception-form">
-            <input type="text" class="exception-input" placeholder="Subdomain (e.g., music)" data-domain="${domain}" />
-            <button class="add-exception" data-domain="${domain}">Allow</button>
-          </div>
         </div>
       `;
     }).join('');
+
+    // Toggle the exceptions panel open/closed
+    blockedList.querySelectorAll('.expand-toggle').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const domain = this.getAttribute('data-domain');
+        if (expandedDomains.has(domain)) {
+          expandedDomains.delete(domain);
+        } else {
+          expandedDomains.add(domain);
+        }
+        renderBlockedDomains(domains);
+        // Focus the input when opening so the user can type right away
+        if (expandedDomains.has(domain)) {
+          const input = blockedList.querySelector(`.exception-input[data-domain="${domain}"]`);
+          if (input) input.focus();
+        }
+      });
+    });
 
     // Add event listeners to remove buttons
     blockedList.querySelectorAll('.remove-domain').forEach(btn => {

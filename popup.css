@@ -234,7 +234,7 @@ input:checked + .slider:before {
 .blocked-item {
   display: flex;
   flex-direction: column;
-  padding: 12px;
+  padding: 8px 12px;
   background: #f8f9fa;
   border-radius: 6px;
   margin-bottom: 8px;
@@ -245,6 +245,10 @@ input:checked + .slider:before {
   background: #e9ecef;
 }
 
+.blocked-item.expanded {
+  background: #eef0f3;
+}
+
 .blocked-item:last-child {
   margin-bottom: 0;
 }
@@ -253,7 +257,27 @@ input:checked + .slider:before {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+}
+
+.expand-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.chevron {
+  font-size: 11px;
+  color: #888;
+  flex-shrink: 0;
+  width: 10px;
 }
 
 .blocked-domain {
@@ -261,6 +285,22 @@ input:checked + .slider:before {
   color: #333;
   font-weight: 500;
   word-break: break-all;
+}
+
+.exception-count {
+  font-size: 11px;
+  color: #0066cc;
+  background: #e7f3ff;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.exceptions-panel {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #dde0e4;
 }
 
 .remove-domain {
@@ -307,18 +347,7 @@ input:checked + .slider:before {
 }
 
 .exceptions-list {
-  margin: 8px 0;
-  padding: 8px 0;
-  border-top: 1px solid #ddd;
-}
-
-.exceptions-label {
-  font-size: 11px;
-  color: #666;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .exception-item {
@@ -366,8 +395,6 @@ input:checked + .slider:before {
 .add-exception-form {
   display: flex;
   gap: 6px;
-  padding-top: 8px;
-  border-top: 1px solid #ddd;
 }
 
 .exception-input {
