@@ -62,44 +62,23 @@ async function updateBlockingRules(blockedDomains, whitelistedSubdomains = {}) {
 
   blockedDomains.forEach((domain) => {
     const redirectUrl = 'https://www.google.com';
-    const whitelist = whitelistedSubdomains[domain] || [];
+    // Stored exceptions are bare subdomain labels (e.g. "music"); build full hosts.
+    const whitelist = (whitelistedSubdomains[domain] || []).map(sub =>
+      sub.endsWith(domain) ? sub : `${sub}.${domain}`
+    );
 
-    // Rule for subdomains: only if there are whitelisted exceptions, use regex; otherwise use wildcard
+    // requestDomains matches the domain AND all its subdomains (e.g. youtube.com,
+    // www.youtube.com, m.youtube.com). excludedRequestDomains carves out the
+    // whitelisted hosts and their subdomains. This is handled natively by
+    // declarativeNetRequest — no regex (RE2 doesn't support lookaheads anyway).
+    const condition = {
+      requestDomains: [domain],
+      resourceTypes: ['main_frame']
+    };
     if (whitelist.length > 0) {
-      // Create regex that blocks *.domain but NOT the whitelisted subdomains
-      const escapedDomain = domain.replace(/\./g, '\\.');
-      const negativeAssertions = whitelist.map(sub => `(?!${sub}\.${escapedDomain})`).join('');
-      const regexPattern = `^https?://${negativeAssertions}[^/]*\.${escapedDomain}/`;
-
-      newRules.push({
-        id: ruleId++,
-        priority: 2,
-        action: {
-          type: 'redirect',
-          redirect: { url: redirectUrl }
-        },
-        condition: {
-          regexFilter: regexPattern,
-          resourceTypes: ['main_frame']
-        }
-      });
-    } else {
-      // No exceptions - use simple wildcard
-      newRules.push({
-        id: ruleId++,
-        priority: 1,
-        action: {
-          type: 'redirect',
-          redirect: { url: redirectUrl }
-        },
-        condition: {
-          urlFilter: `*://*.${domain}/*`,
-          resourceTypes: ['main_frame']
-        }
-      });
+      condition.excludedRequestDomains = whitelist;
     }
 
-    // Rule for domain without subdomain
     newRules.push({
       id: ruleId++,
       priority: 1,
@@ -107,10 +86,7 @@ async function updateBlockingRules(blockedDomains, whitelistedSubdomains = {}) {
         type: 'redirect',
         redirect: { url: redirectUrl }
       },
-      condition: {
-        urlFilter: `*://${domain}/*`,
-        resourceTypes: ['main_frame']
-      }
+      condition
     });
   });
 
