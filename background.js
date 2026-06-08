@@ -67,11 +67,20 @@ async function updateBlockingRules(blockedDomains, whitelistedSubdomains = {}, r
   const newRules = [];
   let ruleId = 1;
 
+  // These subdomains are always excluded regardless of user settings because
+  // they serve Google OAuth / account flows that must not be blocked.
+  const ALWAYS_ALLOWED = {
+    'youtube.com': ['accounts.youtube.com']
+  };
+
   blockedDomains.forEach((domain) => {
     // Stored exceptions are bare subdomain labels (e.g. "music"); build full hosts.
-    const whitelist = (whitelistedSubdomains[domain] || []).map(sub =>
+    const userWhitelist = (whitelistedSubdomains[domain] || []).map(sub =>
       sub.endsWith(domain) ? sub : `${sub}.${domain}`
     );
+
+    // Merge user whitelist with hardcoded always-allowed subdomains.
+    const whitelist = [...new Set([...userWhitelist, ...(ALWAYS_ALLOWED[domain] || [])])];
 
     // requestDomains matches the domain AND all its subdomains (e.g. youtube.com,
     // www.youtube.com, m.youtube.com). excludedRequestDomains carves out the
